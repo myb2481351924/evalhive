@@ -1,0 +1,14 @@
+services:
+  evalhive:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - history:/app/.evalhive   # run history + response cache survive restarts
+    environment:
+      EVALHIVE_DB: /app/.evalhive/history.sqlite3
+      # OPENAI_API_KEY: ${OPENAI_API_KEY:-}   # uncomment for live providers
+volumes:
+  history:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 
 class MetricResult(BaseModel):
@@ -24,6 +24,7 @@ class CaseEval(BaseModel):
     metrics: list[MetricResult] = Field(default_factory=list)
     error: str | None = None
 
+    @computed_field  # serialized into JSON so API/dashboard can read `passed`
     @property
     def passed(self) -> bool:
         return self.error is None and all(m.passed for m in self.metrics)
