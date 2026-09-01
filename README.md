@@ -54,7 +54,13 @@ evalhive serve              # http://127.0.0.1:8000
 
 Or with Docker: `docker compose -f docker/docker-compose.yml up`.
 
-![dashboard](docs/dashboard.png) <!-- replace with a real screenshot -->
+### Dashboard
+
+![EvalHive dashboard — pass-rate trend with baseline, cost & latency per run, run history](docs/dashboard.png)
+
+### Self-contained HTML report
+
+![EvalHive HTML report — provider summary, metric averages and per-case results](docs/report.png)
 
 ## How it works
 

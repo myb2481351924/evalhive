@@ -28,6 +28,14 @@ evalhive run ... --gate        # 相对基线退化 => 退出码 1（CI 红灯�
 evalhive serve                 # 看板 http://127.0.0.1:8000
 ```
 
+### 评测看板
+
+![EvalHive 看板——通过率趋势（含基线虚线）、每轮成本与延迟、run 历史](docs/dashboard.png)
+
+### 自包含 HTML 报告
+
+![EvalHive HTML 报告——provider 汇总、指标均值条形图、逐用例结果](docs/report.png)
+
 ## 关键设计决策（面试可讲的点）
 
 - **为什么 mock provider 是一等公民**：先接流水线再花 token 预算；评审者/面试官 clone 下来
