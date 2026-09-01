@@ -13,6 +13,7 @@ from ..core.compare import diff_runs, gate_decision, load_run_result
 from ..core.results import RunResult
 from ..core.runner import run_evaluation
 from ..report import to_junit_xml, to_markdown
+from ..report.html import to_html
 from ..storage import Store
 
 app = typer.Typer(help="EvalHive — CI-style LLM evaluation & regression gate", no_args_is_help=True)
@@ -59,6 +60,7 @@ def run(
     json_out: Path | None = typer.Option(None, "--json", help="Write the full RunResult as JSON"),
     junit_out: Path | None = typer.Option(None, "--junit", help="Write JUnit XML (CI artifact)"),
     md_out: Path | None = typer.Option(None, "--md", help="Write a Markdown summary (PR comment)"),
+    html_out: Path | None = typer.Option(None, "--html", help="Write a self-contained HTML report"),
     baseline: Path | None = typer.Option(None, "--baseline", help="RunResult JSON to compare against"),
     save: bool = typer.Option(False, "--save/--no-save", help="Persist the run to local history"),
     label: str | None = typer.Option(None, "--label", help="History label for this run"),
@@ -119,6 +121,10 @@ def run(
         md_out.parent.mkdir(parents=True, exist_ok=True)
         md_out.write_text(to_markdown(result, decision), encoding="utf-8")
         typer.echo(f"wrote {md_out}")
+    if html_out:
+        html_out.parent.mkdir(parents=True, exist_ok=True)
+        html_out.write_text(to_html(result, decision), encoding="utf-8")
+        typer.echo(f"wrote {html_out}")
     if save:
         run_id = Store().save_run(result, label or str(config))
         typer.echo(f"saved as run #{run_id} (use `evalhive set-baseline {run_id}` to pin it)")

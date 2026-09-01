@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>EvalHive report — {{ result.config_hash }}</title>
+<style>
+  :root { --ok:#16a34a; --bad:#dc2626; --warn:#d97706; --ink:#0f172a; --mut:#64748b; --line:#e2e8f0; }
+  * { box-sizing: border-box; }
+  body { font: 14px/1.55 ui-sans-serif, system-ui, "Segoe UI", sans-serif; color: var(--ink);
+         margin: 0; background: #f8fafc; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--mut); margin-bottom: 20px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 10px;
+          padding: 16px 18px; margin-bottom: 18px; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px;
+           font-weight: 600; color: #fff; }
+  .badge.ok { background: var(--ok); } .badge.bad { background: var(--bad); }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--mut); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .bar { background: #e2e8f0; border-radius: 4px; height: 8px; min-width: 90px; }
+  .bar i { display: block; height: 8px; border-radius: 4px; background: var(--ok); }
+  .bar i.low { background: var(--bad); } .bar i.mid { background: var(--warn); }
+  details summary { cursor: pointer; color: var(--mut); font-size: 12px; }
+  pre { background: #0f172a; color: #e2e8f0; padding: 10px 12px; border-radius: 8px;
+        overflow-x: auto; font-size: 12px; white-space: pre-wrap; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+  .reason { color: var(--bad); margin: 2px 0; }
+  footer { color: var(--mut); font-size: 12px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>EvalHive report</h1>
+  <div class="sub">{{ result.description or "(no description)" }} ·
+    config_hash <code>{{ result.config_hash }}</code> · {{ result.created_at }}
+    {% if decision %} · gate
+      <span class="badge {{ 'ok' if decision.passed else 'bad' }}">
+        {{ 'PASSED' if decision.passed else 'FAILED' }}</span>
+    {% endif %}
+  </div>
+
+  {% if decision and (decision.reasons or decision.diff) %}
+  <div class="card">
+    {% for r in decision.reasons %}<div class="reason">⚠ {{ r }}</div>{% endfor %}
+    {% if decision.diff %}
+    {% set d = decision.diff %}
+    <div>drift <b>{{ '%+.1f' % (d.drift * 100) }}%</b> vs baseline
+      {{ '%.1f' % (d.baseline_pass_rate * 100) }}% → {{ '%.1f' % (d.current_pass_rate * 100) }}%
+      (95% bootstrap CI [{{ '%+.1f' % (d.ci_low * 100) }}%, {{ '%+.1f' % (d.ci_high * 100) }}%],
+      {{ 'significant' if d.significant else 'not significant — likely noise' }})
+      {% if d.newly_failed %} · newly failed:
+        {% for c in d.newly_failed %}<code>{{ c.provider_id }}/{{ c.case_id }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <table>
+      <tr><th>provider</th><th class="num">cases</th><th class="num">pass</th><th class="num">fail</th>
+          <th class="num">err</th><th>pass rate</th><th class="num">avg latency</th><th class="num">cost</th></tr>
+      {% for pid, s in summaries.items()|sort %}
+      <tr>
+        <td><b>{{ pid }}</b></td>
+        <td class="num">{{ s.total }}</td>
+        <td class="num" style="color:var(--ok)">{{ s.passed }}</td>
+        <td class="num" style="color:var(--bad)">{{ s.failed }}</td>
+        <td class="num">{{ s.errored }}</td>
+        <td><div class="bar" title="{{ '%.1f' % (s.pass_rate * 100) }}%"><i style="width:{{ (s.pass_rate * 100)|round }}%"
+             class="{{ 'mid' if s.pass_rate < 1 and s.pass_rate >= 0.8 else 'low' if s.pass_rate < 0.8 else '' }}"></i></div>
+             <small>{{ '%.1f' % (s.pass_rate * 100) }}%</small></td>
+        <td class="num">{{ '%.0f' % s.avg_latency_ms }}ms</td>
+        <td class="num">${{ '%.4f' % s.total_cost_usd }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <div class="grid">
+    {% for pid, metrics in breakdown.items()|sort %}
+    <div class="card">
+      <b>{{ pid }}</b> — metric averages
+      <table>
+        {% for mn, sc in metrics|dictsort %}
+        <tr>
+          <td>{{ mn }}</td>
+          <td style="width:55%"><div class="bar"><i style="width:{{ (sc * 100)|round }}%"
+               class="{{ 'mid' if sc < 1 and sc >= 0.8 else 'low' if sc < 0.8 else '' }}"></i></div></td>
+          <td class="num">{{ '%.2f' % sc }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <b>Case details</b>
+    <table>
+      <tr><th>provider / case</th><th>result</th><th>metrics</th><th class="num">latency</th><th class="num">cost</th></tr>
+      {% for e in result.results %}
+      <tr>
+        <td><code>{{ e.provider_id }}/{{ e.case_id }}</code></td>
+        <td>{% if e.error %}<span class="badge bad">ERROR</span>
+            {% elif e.passed %}<span class="badge ok">PASS</span>
+            {% else %}<span class="badge bad">FAIL</span>{% endif %}</td>
+        <td>
+          {% if e.error %}<div class="reason">{{ e.error }}</div>
+          {% else %}
+            {% for m in e.metrics %}
+            <div><span style="color:{{ 'var(--ok)' if m.passed else 'var(--bad)' }}">{{ '✓' if m.passed else '✗' }}</span>
+              {{ m.metric }}
+              <div class="bar" style="display:inline-block;width:70px;vertical-align:middle">
+                <i style="width:{{ (m.score * 100)|round }}%"
+                   class="{{ 'mid' if m.score < 1 and m.score >= 0.8 else 'low' if m.score < 0.8 else '' }}"></i>
+              </div>
+              <small>{{ '%.2f' % m.score }}</small>
+              <details><summary>detail</summary><pre>{{ m.detail }}</pre></details>
+            </div>
+            {% endfor %}
+          {% endif %}
+        </td>
+        <td class="num">{{ '%.0f' % e.latency_ms }}ms</td>
+        <td class="num">${{ '%.4f' % e.cost_usd }}</td>
+      </tr>
+      <tr><td colspan="5"><details><summary>prompt &amp; response</summary>
+        <pre><b>PROMPT</b>
+{{ e.prompt }}
+<b>RESPONSE</b>
+{{ e.response }}</pre></details></td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <footer>Generated by EvalHive — LLM evaluation &amp; regression gating. Reproduce with the config_hash above.</footer>
+</div>
+</body>
+</html>
