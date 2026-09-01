@@ -1,0 +1,4 @@
+{"case_id": "g1", "response": "def fib(n):\n    if n <= 0:\n        return 0\n    a, b = 0, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a", "latency_ms": 400}
+{"case_id": "g2", "response": "{\"name\": \"hive\", \"version\": \"1.0.0\", \"deps\": []}", "latency_ms": 200}
+{"case_id": "g3", "response": "SELECT amount FROM orders DESC LIMIT 10", "latency_ms": 300}
+{"case_id": "g4", "response": "wc -l app.log | grep ERROR", "latency_ms": 220}

@@ -1,0 +1,28 @@
+description: Function-calling agent — schema validity + relevance eval
+judge_provider: judge
+
+providers:
+  - id: agent
+    type: mock
+    model: mock://tool-agent
+    responses_file: agent_responses.jsonl
+
+judge_providers:
+  - id: judge
+    type: mock
+    model: mock://qwen-plus
+    default_response: |
+      The tool call matches the user intent.
+      VERDICT: pass
+      SCORE: 5
+
+datasets:
+  - path: dataset.jsonl
+
+defaults:
+  assert:
+    - type: latency
+      threshold: 800
+
+gate:
+  min_pass_rate: 1.0

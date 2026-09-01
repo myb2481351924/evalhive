@@ -1,0 +1,30 @@
+description: Customer-support RAG chat — regression suite
+judge_provider: judge
+
+providers:
+  - id: support-bot
+    type: mock
+    model: mock://support-bot-v1
+    responses_file: bot_responses.jsonl
+    prompt_template: "You are the support bot.\nContext:\n{context}\n\nQuestion: {prompt}"
+
+judge_providers:
+  - id: judge
+    type: mock
+    model: mock://qwen-plus
+    responses_file: judge_responses.jsonl
+    default_response: |
+      The answer is correct, grounded and on-topic.
+      VERDICT: pass
+      SCORE: 5
+
+datasets:
+  - path: dataset.jsonl
+
+defaults:
+  assert:
+    - type: latency
+      threshold: 500
+
+gate:
+  min_pass_rate: 0.8

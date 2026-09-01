@@ -1,0 +1,5 @@
+{"case_id": "c1", "response": "Unopened items can be returned within 30 days of purchase for a full refund.", "latency_ms": 180}
+{"case_id": "c2", "response": "Standard shipping takes 5-7 business days within mainland.", "latency_ms": 150}
+{"case_id": "c3", "response": "The Beijing support desk is open 8:00-20:00 every day.", "latency_ms": 90}
+{"case_id": "c4", "response": "{\"order_id\": \"A123\", \"status\": \"in_transit\", \"eta_days\": 4}", "latency_ms": 210}
+{"case_id": "c5", "response": "Go to Settings > Account > Reset password and follow the email verification link we send you.", "latency_ms": 120}

@@ -1,0 +1,23 @@
+description: Code generation — head-to-head model comparison (provider matrix demo)
+providers:
+  - id: model-a
+    type: mock
+    model: mock://model-a
+    responses_file: model_a_responses.jsonl
+  - id: model-b
+    type: mock
+    model: mock://model-b
+    responses_file: model_b_responses.jsonl
+
+datasets:
+  - path: dataset.jsonl
+
+defaults:
+  assert:
+    - type: latency
+      threshold: 1000
+    - type: cost
+      threshold: 0.01
+
+gate:
+  min_pass_rate: 0.9

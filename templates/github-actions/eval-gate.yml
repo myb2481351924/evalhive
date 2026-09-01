@@ -1,0 +1,48 @@
+# EvalHive CI gate — drops this file into .github/workflows/ of your repo.
+# Runs the eval suite on every PR and fails the check when quality regresses.
+#
+# Tip: without a real API key the mock provider keeps this workflow green and
+# fully offline, so you can wire the pipeline first and plug in models later.
+name: LLM eval gate
+
+on:
+  pull_request:
+    paths:
+      - "evals/**"
+      - "src/**"
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install evalhive   # or: pip install -e . in your repo
+      - name: Run evaluation gate
+        id: eval
+        env:
+          OPENAI_API_KEY: *** secrets.OPENAI_API_KEY }}
+        run: |
+          evalhive run evals/config.yaml \
+            --gate --save --baseline evals/baseline.json \
+            --json out/current.json --junit out/junit.xml --md out/summary.md
+      - name: Comment PR with summary
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('out/summary.md', 'utf8');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number, body,
+            });
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: out/

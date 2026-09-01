@@ -1,0 +1,3 @@
+{"case_id": "f1", "response": "{\"tool\": \"get_weather\", \"args\": {\"city\": \"Shanghai\", \"date\": \"2026-09-02\"}}", "latency_ms": 160}
+{"case_id": "f2", "response": "{\"tool\": \"book_flight\", \"args\": {\"from\": \"Beijing\", \"to\": \"Shenzhen\", \"date\": \"2026-09-10\"}}", "latency_ms": 190}
+{"case_id": "f3", "response": "[{\"tool\": \"get_weather\", \"args\": {\"city\": \"Guangzhou\", \"date\": \"2026-09-12\"}}, {\"tool\": \"book_flight\", \"args\": {\"from\": \"Guangzhou\", \"to\": \"Chengdu\", \"date\": \"2026-09-12\"}}]", "latency_ms": 240}
