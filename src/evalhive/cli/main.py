@@ -155,6 +155,20 @@ def diff(
 
 
 @app.command()
+def serve(
+    host: str = typer.Option("127.0.0.1", help="Bind address"),
+    port: int = typer.Option(8000, help="Bind port"),
+) -> None:
+    """Start the EvalHive API + dashboard (http://{host}:{port})."""
+    import uvicorn
+
+    from ..api import create_app
+
+    typer.echo(f"EvalHive dashboard on http://{host}:{port}")
+    uvicorn.run(create_app(), host=host, port=port, log_level="warning")
+
+
+@app.command()
 def history(
     limit: int = typer.Option(20, "--limit", "-n", help="How many recent runs to show"),
 ) -> None:

@@ -49,7 +49,7 @@ class MetricContext:
         provider = self.providers.get(provider_id)
         if provider is None:
             return ProviderResponse(error=f"provider {provider_id!r} is not declared in config")
-        key = f"aux:{ResponseCache.key(provider_id, prompt)}"
+        key = f"aux:{ResponseCache.key(f'{provider_id}:{provider.cache_salt()}', prompt)}"
         return await self.cache.get_or_call(key, lambda: provider.complete(prompt))
 
 

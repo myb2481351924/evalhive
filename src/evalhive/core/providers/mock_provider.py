@@ -11,6 +11,7 @@ Response resolution order:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import time
 from pathlib import Path
@@ -22,16 +23,26 @@ class MockProvider(LLMProvider):
     def __init__(self, config, base_dir: Path | None = None):
         super().__init__(config)
         self._entries: list[dict] = []
+        raw = b""
         if config.responses_file:
             p = Path(config.responses_file)
             if base_dir and not p.is_absolute():
                 p = base_dir / p
             if not p.exists():
                 raise FileNotFoundError(f"mock responses file not found: {p}")
-            for line in p.read_text(encoding="utf-8").splitlines():
+            raw = p.read_bytes()
+            for line in raw.decode("utf-8").splitlines():
                 line = line.strip()
                 if line:
                     self._entries.append(json.loads(line))
+        self._salt = hashlib.sha256(
+            raw + (config.default_response or "").encode()
+            + (config.prompt_template or "").encode()
+        ).hexdigest()[:12]
+
+    def cache_salt(self) -> str:
+        # editing the recorded fixtures must invalidate cached responses
+        return f"mock:{self._salt}"
 
     async def complete(self, prompt: str, *, case_id: str | None = None) -> ProviderResponse:
         entry = self._lookup(case_id, prompt)

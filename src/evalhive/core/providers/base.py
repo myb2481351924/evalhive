@@ -42,6 +42,11 @@ class LLMProvider(ABC):
             return f"Context:\n{ctx}\n\nQuestion: {case.prompt}"
         return case.prompt
 
+    def cache_salt(self) -> str:
+        """Identity of the provider *implementation*; mixed into response cache
+        keys so changing model params or mock fixtures invalidates old entries."""
+        return f"{self.config.model}:{self.config.temperature}"
+
     @abstractmethod
     async def complete(self, prompt: str, *, case_id: str | None = None) -> ProviderResponse:
         ...

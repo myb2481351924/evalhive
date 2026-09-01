@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EvalHive dashboard</title>
+<link rel="stylesheet" href="style.css">
+<script src="vendor/echarts.min.js"></script>
+</head>
+<body>
+<header>
+  <h1>🐝 EvalHive</h1>
+  <span class="sub">LLM evaluation &amp; regression gate — dashboard</span>
+  <span class="spacer"></span>
+  <form id="run-form" title="Run one of the bundled offline demo suites">
+    <select id="run-config">
+      <option value="examples/rag-chat/config.yaml">examples/rag-chat (RAG)</option>
+      <option value="examples/codegen/config.yaml">examples/codegen (matrix)</option>
+      <option value="examples/function-calling/config.yaml">examples/function-calling</option>
+    </select>
+    <button type="submit">▶ Run eval</button>
+  </form>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Pass-rate trend</h2>
+    <div id="trend" class="chart"></div>
+  </section>
+
+  <section class="card">
+    <h2>Cost &amp; latency per run</h2>
+    <div id="cost" class="chart small"></div>
+  </section>
+
+  <section class="card wide">
+    <div class="row-between">
+      <h2>Runs</h2>
+      <button id="refresh" class="ghost">↻ refresh</button>
+    </div>
+    <table id="runs">
+      <thead><tr>
+        <th>#</th><th>label</th><th>config_hash</th><th>created (UTC)</th>
+        <th>pass</th><th class="num">pass rate</th><th>baseline</th><th></th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+    <p id="status-line" class="muted"></p>
+  </section>
+</main>
+
+<div id="detail-modal" class="modal hidden">
+  <div class="modal-box">
+    <div class="row-between">
+      <h3 id="detail-title">Run</h3>
+      <div>
+        <a id="detail-html" target="_blank" class="btn ghost">full HTML report ↗</a>
+        <button id="detail-close" class="ghost">✕ close</button>
+      </div>
+    </div>
+    <div id="detail-body"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

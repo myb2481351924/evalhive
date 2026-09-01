@@ -50,7 +50,7 @@ async def run_evaluation(
         assertions = merge_assertions(cfg, case)
         async with sem:
             response = await cache.get_or_call(
-                ResponseCache.key(f"main:{provider_id}", prompt),
+                ResponseCache.key(f"main:{provider_id}:{provider.cache_salt()}", prompt),
                 lambda: provider.complete(prompt, case_id=case.id),
             )
         metrics = []
