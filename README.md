@@ -12,7 +12,7 @@ engineer's discipline to model quality: declarative eval suites, layered metrics
 run-to-run regression detection with statistical significance, and a hard CI gate
 that fails the build when quality drops.
 
-> 中文文档见 [README.zh-CN.md](README.zh-CN.md)。
+> 中文文档见 [README.zh-CN.md](README.zh-CN.md)；**保姆级使用教程（中文）：[docs/TUTORIAL.zh-CN.md](docs/TUTORIAL.zh-CN.md)**。
 
 ## Features
 
