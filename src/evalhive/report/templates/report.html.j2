@@ -125,7 +125,7 @@
           {% endif %}
         </td>
         <td class="num">{{ '%.0f' % e.latency_ms }}ms</td>
-        <td class="num">${{ '%.4f' % e.cost_usd }}</td>
+        <td class="num">${{ '%.4f' % e.total_cost_usd }}{% if e.judge_cost_usd %} <small>(incl. judge ${{ '%.4f' % e.judge_cost_usd }})</small>{% endif %}</td>
       </tr>
       <tr><td colspan="5"><details><summary>prompt &amp; response</summary>
         <pre><b>PROMPT</b>

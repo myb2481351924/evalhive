@@ -67,3 +67,21 @@ def test_gate_decision_reasons():
     assert not d.passed and "pass_rate" in d.reasons[0]
     d_ok = gate_decision(result, GateConfig(min_pass_rate=0.8))
     assert d_ok.passed and not d_ok.reasons
+
+
+def test_render_failure_fails_case_not_run(tmp_path):
+    """A broken prompt_template must degrade to a per-case error, never crash the run."""
+    (tmp_path / "d.jsonl").write_text('{"id":"a","prompt":"hi"}\n', encoding="utf-8")
+    (tmp_path / "c.yaml").write_text(
+        "providers:\n  - id: m\n    type: mock\n    default_response: ok\n"
+        '    prompt_template: "Answer in {style} tone: {prompt}"\n'
+        "datasets: [{path: d.jsonl}]\n",
+        encoding="utf-8",
+    )
+    cfg, base = load_config(tmp_path / "c.yaml")
+    cases = load_cases(cfg, base)
+    result = asyncio.run(run_evaluation(cfg, cases, base, use_cache=False))
+    assert len(result.results) == 1
+    e = result.results[0]
+    assert not e.passed and e.error and e.error.startswith("prompt render failed")
+    assert e.metrics == []

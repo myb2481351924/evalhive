@@ -10,12 +10,14 @@ class MetricResult(BaseModel):
     score: float = Field(ge=0.0, le=1.0)
     passed: bool
     detail: str = ""
+    cost_usd: float = 0.0  # LLM-judge call cost; deterministic metrics stay 0
+    latency_ms: float = 0.0
 
 
 class CaseEval(BaseModel):
     provider_id: str
     case_id: str
-    prompt: str
+    prompt: str = ""  # empty when prompt rendering itself failed
     response: str = ""
     latency_ms: float = 0.0
     cost_usd: float = 0.0
@@ -28,6 +30,16 @@ class CaseEval(BaseModel):
     @property
     def passed(self) -> bool:
         return self.error is None and all(m.passed for m in self.metrics)
+
+    @computed_field
+    @property
+    def judge_cost_usd(self) -> float:
+        return round(sum(m.cost_usd for m in self.metrics), 6)
+
+    @computed_field
+    @property
+    def total_cost_usd(self) -> float:
+        return round(self.cost_usd + self.judge_cost_usd, 6)
 
 
 class ProviderSummary(BaseModel):
@@ -70,7 +82,7 @@ class RunResult(BaseModel):
                 errored=errored,
                 pass_rate=round(passed / total, 4) if total else 0.0,
                 avg_latency_ms=round(sum(e.latency_ms for e in evals) / total, 1) if total else 0.0,
-                total_cost_usd=round(sum(e.cost_usd for e in evals), 6),
+                total_cost_usd=round(sum(e.total_cost_usd for e in evals), 6),
                 avg_score=round(sum(scores) / len(scores), 4) if scores else 0.0,
             )
         return summaries

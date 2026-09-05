@@ -8,6 +8,7 @@ from evalhive.config.loader import load_config
 from evalhive.core.cache import ResponseCache
 from evalhive.core.providers import build_provider
 from evalhive.report import to_junit_xml, to_markdown
+from evalhive.report.html import to_html
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 
@@ -58,3 +59,20 @@ def test_reports_render(run_fixture):
     assert xml.startswith("<?xml") and "<testsuite" in xml
     md = to_markdown(result, decision)
     assert "Gate:" in md and "pass rate" in md
+    html = to_html(result, decision)
+    assert "EvalHive report" in html and result.config_hash in html
+
+
+def test_judge_cost_accounted(run_fixture):
+    """LLM-judge metric calls carry their own cost/latency into the case totals."""
+    result, _ = run_fixture
+    c1 = next(e for e in result.results if e.case_id == "c1")
+    judged = [m for m in c1.metrics if m.metric in ("llm-correctness", "faithfulness")]
+    assert judged and all(m.cost_usd > 0 and m.latency_ms > 0 for m in judged)
+    assert c1.judge_cost_usd > 0
+    assert c1.total_cost_usd == c1.cost_usd + c1.judge_cost_usd
+    deterministic = [m for m in c1.metrics if m.metric in ("icontains", "latency")]
+    assert all(m.cost_usd == 0 for m in deterministic)
+    # provider summary cost includes judge spend
+    summary = result.summary()["support-bot"]
+    assert summary.total_cost_usd == round(sum(e.total_cost_usd for e in result.results), 6)

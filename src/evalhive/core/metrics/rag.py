@@ -45,7 +45,8 @@ async def m_faithfulness(a, case: Case, response: ProviderResponse, ctx: MetricC
     threshold = a.threshold if a.threshold is not None else 0.8
     return MetricResult(metric="faithfulness", score=round(min(1.0, max(0.0, score)), 4),
                         passed=score >= threshold,
-                        detail=f"supported={m.group(0) if m else 'n/a'} score={score:.2f} :: {jr.text[:160]}")
+                        detail=f"supported={m.group(0) if m else 'n/a'} score={score:.2f} :: {jr.text[:160]}",
+                        cost_usd=jr.cost_usd, latency_ms=jr.latency_ms)
 
 
 @register("answer-relevance")
@@ -70,4 +71,5 @@ async def m_answer_relevance(a, case: Case, response: ProviderResponse, ctx: Met
     score = raw / 5 if raw is not None else (1.0 if verdict else 0.0)
     threshold = a.threshold if a.threshold is not None else 0.8
     return MetricResult(metric="answer-relevance", score=round(score, 4), passed=score >= threshold,
-                        detail=f"judge score={raw} verdict={verdict} :: {jr.text[:160]}")
+                        detail=f"judge score={raw} verdict={verdict} :: {jr.text[:160]}",
+                        cost_usd=jr.cost_usd, latency_ms=jr.latency_ms)

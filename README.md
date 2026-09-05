@@ -3,6 +3,7 @@
 **CI-style LLM evaluation & regression gating — built by a test engineer, for LLM quality.**
 
 [![MIT license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![CI](https://github.com/myb2481351924/evalhive/actions/workflows/ci.yml/badge.svg)](https://github.com/myb2481351924/evalhive/actions/workflows/ci.yml)
 ![python](https://img.shields.io/badge/python-3.11%2B-green)
 
 LLM apps ship fast and regress silently: a prompt tweak, a model version bump, a
@@ -126,18 +127,24 @@ into your repo: run suite → fail the check on breach → comment a Markdown su
 | **Provider `cache_salt`** | A cache keyed only by prompt would return stale answers after you edit a model param or a mock fixture. The salt folds the provider implementation identity into the key. |
 | **Judge protocol: `VERDICT` + `SCORE`, unparseable = fail** | LLM judges fail in style, not in logic. Strict machine parsing plus keeping the raw judge output makes verdicts auditable — and biases failure toward the safe side. |
 | **Judge providers can't be targets** | Early design let judges sit in the same matrix as targets, which silently "evaluated" the judge against every case. Two namespaces (`providers` vs `judge_providers`) made the data flow obvious. |
+| **Untrusted content is tag-fenced** | The model under test could try to manipulate its own grade. Judge prompts wrap `QUESTION`/`ANSWER` in `<untrusted>` tags with an explicit ignore-instructions directive — a first-line defense, with canonicalization on the roadmap. |
 
 ## Development
 
 ```bash
 pip install -e ".[dev]"
-pytest -q        # 28 tests: metrics, loader, bootstrap, e2e runner, cache salt, API
+pytest -q        # 33 tests: metrics, loader, bootstrap, e2e runner, cache salt, storage, API
 ```
+
+CI (`.github/workflows/ci.yml`) runs the suite and then eats its own dog food:
+`--gate` must pass on the healthy example and must **fail** on the regressed one —
+proving the exit-code contract on every push.
 
 ## Roadmap
 
 - More RAGAS-style metrics (context precision/recall), embedding similarity
+- Stronger judge-injection defenses (canonicalization, constrained decoding of verdicts)
 - Eval-suite auto-expansion from production traces (dataset flywheel)
-- Cost budget enforcement per run; judge-call accounting
+- Cost budget enforcement per run; per-provider rate-limit profiles
 - Postgres first-class support; multi-user auth for team servers
 - `pipx install evalhive` distribution

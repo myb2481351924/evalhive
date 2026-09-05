@@ -7,7 +7,7 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-from sqlalchemy import JSON, DateTime, Integer, String, Text, create_engine, select
+from sqlalchemy import JSON, DateTime, Float, Integer, String, Text, create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 from ..core.results import RunResult
@@ -30,7 +30,7 @@ class RunRow(Base):
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     n_cases: Mapped[int] = mapped_column(Integer, default=0)
     n_passed: Mapped[int] = mapped_column(Integer, default=0)
-    pass_rate: Mapped[float] = mapped_column(Integer, default=0.0)
+    pass_rate: Mapped[float] = mapped_column(Float, default=0.0)
     payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     is_baseline: Mapped[int] = mapped_column(Integer, default=0)
 

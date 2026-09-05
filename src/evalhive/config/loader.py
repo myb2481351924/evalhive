@@ -11,7 +11,6 @@ from pydantic import ValidationError
 
 from .models import Case, EvalConfig
 
-
 class ConfigError(Exception):
     pass
 
@@ -85,15 +84,26 @@ def _validate_judge_refs(cfg: EvalConfig, cases: list[Case], where: str) -> None
                                   "is not a judge_providers id")
 
 
-def config_hash(cfg: EvalConfig, cases: list[Case]) -> str:
-    """Stable sha256 over config + dataset content. Same hash => reproducible rerun.
+def config_hash(cfg: EvalConfig, cases: list[Case], config_dir: Path | None = None) -> str:
+    """Stable sha256 over config + dataset content (+ mock fixture contents when
+    ``config_dir`` is given). Same hash => same inputs => reproducible rerun.
 
-    File paths are resolved relative to the config dir and stored as-is; the
-    dataset *content* (serialized cases) is what actually pins reproducibility.
+    Mock response files are part of the *inputs* in offline mode: editing a
+    fixture changes the hash exactly like editing the dataset would.
     """
+    fixtures: dict[str, str] = {}
+    if config_dir is not None:
+        for pr in [*cfg.providers, *cfg.judge_providers]:
+            if pr.type == "mock" and pr.responses_file:
+                p = Path(pr.responses_file)
+                if not p.is_absolute():
+                    p = config_dir / p
+                if p.exists():
+                    fixtures[pr.id] = hashlib.sha256(p.read_bytes()).hexdigest()[:16]
     payload = {
         "config": cfg.model_dump(mode="json", by_alias=True),
         "cases": [c.model_dump(mode="json", by_alias=True) for c in cases],
+        "fixtures": fixtures,
     }
     blob = json.dumps(payload, sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]

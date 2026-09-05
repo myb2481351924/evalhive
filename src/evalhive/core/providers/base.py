@@ -47,6 +47,9 @@ class LLMProvider(ABC):
         keys so changing model params or mock fixtures invalidates old entries."""
         return f"{self.config.model}:{self.config.temperature}"
 
+    async def aclose(self) -> None:
+        """Release any pooled connections; default is a no-op."""
+
     @abstractmethod
     async def complete(self, prompt: str, *, case_id: str | None = None) -> ProviderResponse:
         ...

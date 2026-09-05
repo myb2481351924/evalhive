@@ -32,6 +32,25 @@ def test_load_rag_chat_example():
     assert config_hash(cfg, cases) != h1  # dataset change => new hash
 
 
+def test_config_hash_includes_mock_fixture_content(tmp_path: Path):
+    ds = tmp_path / "d.jsonl"
+    ds.write_text('{"id":"a","prompt":"q"}\n', encoding="utf-8")
+    fix = tmp_path / "r.jsonl"
+    fix.write_text('{"case_id":"a","response":"one"}\n', encoding="utf-8")
+    cfg_file = tmp_path / "c.yaml"
+    cfg_file.write_text(
+        "providers:\n  - id: m\n    type: mock\n    responses_file: r.jsonl\n"
+        "datasets: [{path: d.jsonl}]\n",
+        encoding="utf-8",
+    )
+    cfg, base = load_config(cfg_file)
+    cases = load_cases(cfg, base)
+    h1 = config_hash(cfg, cases, base)
+    assert h1 == config_hash(cfg, cases, base)
+    fix.write_text('{"case_id":"a","response":"completely different"}\n', encoding="utf-8")
+    assert config_hash(cfg, cases, base) != h1  # fixture edit == input edit
+
+
 def test_duplicate_case_ids_rejected(tmp_path: Path):
     ds = tmp_path / "d.jsonl"
     ds.write_text('{"id":"x","prompt":"a"}\n{"id":"x","prompt":"b"}\n', encoding="utf-8")

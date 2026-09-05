@@ -1,0 +1,38 @@
+# EvalHive's own CI: unit tests + the gate eating its own dog food.
+# rag-chat must PASS its gate (80% >= 80%); codegen must FAIL it
+# (87.5% < 90% because model-b regresses) -- proving the gate actually bites.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e ".[dev]"
+      - name: Unit & integration tests
+        run: pytest -q
+      - name: Offline eval run (mock providers, zero API keys)
+        run: evalhive run examples/rag-chat/config.yaml --gate --html out/report.html --junit out/junit.xml
+      - name: Gate must pass on healthy suite
+        run: evalhive run examples/rag-chat/config.yaml --gate
+      - name: Gate must FAIL on regressed suite (exit code 1)
+        run: |
+          if evalhive run examples/codegen/config.yaml --gate; then
+            echo "::error::gate unexpectedly passed on a regressed suite"
+            exit 1
+          fi
+          echo "gate correctly failed with exit code 1"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-report
+          path: out/

@@ -24,7 +24,7 @@ jobs:
       - name: Run evaluation gate
         id: eval
         env:
-          OPENAI_API_KEY: *** secrets.OPENAI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           evalhive run evals/config.yaml \
             --gate --save --baseline evals/baseline.json \

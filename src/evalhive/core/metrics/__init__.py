@@ -6,6 +6,7 @@ register into LLM_METRICS from judge.py / rag.py.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 
 from ...config.models import AssertionConfig, Case
@@ -26,17 +27,24 @@ def register(name: str):
 
 
 class MetricContext:
-    """Shared services a metric may need: providers, default judge, cache."""
+    """Shared services a metric may need: providers, default judge, cache.
+
+    ``concurrency`` throttles aux (judge) calls separately from the main
+    matrix, so a 20-case suite with 3 judge metrics cannot open 60 parallel
+    connections against a rate-limited API.
+    """
 
     def __init__(
         self,
         providers: dict[str, LLMProvider],
         default_judge: str | None = None,
         cache: ResponseCache | None = None,
+        concurrency: int = 5,
     ):
         self.providers = providers
         self.default_judge = default_judge
         self.cache = cache or ResponseCache()
+        self._sem = asyncio.Semaphore(concurrency)
 
     def resolve_judge(self, assertion: AssertionConfig) -> LLMProvider | None:
         pid = assertion.provider or self.default_judge
@@ -50,7 +58,12 @@ class MetricContext:
         if provider is None:
             return ProviderResponse(error=f"provider {provider_id!r} is not declared in config")
         key = f"aux:{ResponseCache.key(f'{provider_id}:{provider.cache_salt()}', prompt)}"
-        return await self.cache.get_or_call(key, lambda: provider.complete(prompt))
+
+        async def _call() -> ProviderResponse:
+            async with self._sem:
+                return await provider.complete(prompt)
+
+        return await self.cache.get_or_call(key, _call)
 
 
 def metric_names() -> set[str]:
