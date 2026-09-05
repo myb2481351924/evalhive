@@ -1,0 +1,3 @@
+{"id": "q1", "prompt": "A train travels 60 km in 45 minutes. What is its average speed in km/h?", "expected": "80", "assert": [{"type": "icontains", "value": "80"}]}
+{"id": "q2", "prompt": "What is the capital of Australia?", "expected": "Canberra", "assert": [{"type": "icontains", "value": "Canberra"}]}
+{"id": "q3", "prompt": "Extract the price from: 'The Pro plan costs $29 per month.'", "expected": "29", "assert": [{"type": "icontains", "value": "29"}]}

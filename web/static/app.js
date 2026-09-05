@@ -90,7 +90,7 @@ async function openDetail(id) {
   const cases = run.results.map((e) => {
     const m = e.error ? `<span class="bad">ERROR ${escapeHtml(e.error.slice(0, 80))}</span>`
       : e.metrics.map((x) => `${x.passed ? "✓" : '<span class="bad">✗</span>'} ${x.metric}`).join(" ");
-    return `<tr><td><code>${e.provider_id}/${e.case_id}</code></td>
+    return `<tr><td><code>${e.provider_id}${e.prompt_id && e.prompt_id !== "default" ? "/" + e.prompt_id : ""}/${e.case_id}</code></td>
       <td>${e.passed ? '<span class="ok">PASS</span>' : '<span class="bad">FAIL</span>'}</td>
       <td class="metrics">${m}</td></tr>`;
   }).join("");

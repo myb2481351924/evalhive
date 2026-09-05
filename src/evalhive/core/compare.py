@@ -22,15 +22,25 @@ def load_run_result(path: str | Path) -> RunResult:
     return RunResult.model_validate(json.loads(Path(path).read_text(encoding="utf-8")))
 
 
-def pass_flags(result: RunResult) -> dict[tuple[str, str], int]:
-    """(provider, case) -> 1/0 pass flag."""
-    return {(e.provider_id, e.case_id): 1 if e.passed else 0 for e in result.results}
+def pass_flags(result: RunResult) -> dict[tuple[str, str, str], int]:
+    """(provider, prompt_variant, case) -> 1/0 pass flag."""
+    return {(e.provider_id, e.prompt_id, e.case_id): 1 if e.passed else 0 for e in result.results}
 
 
 class CaseDiff(BaseModel):
     provider_id: str
+    prompt_id: str = "default"
     case_id: str
     change: str  # newly_failed | newly_passed | unchanged_pass | unchanged_fail | added | removed
+
+    @property
+    def label(self) -> str:
+        pid = (
+            self.provider_id
+            if self.prompt_id == "default"
+            else f"{self.provider_id}/{self.prompt_id}"
+        )
+        return f"{pid}/{self.case_id}"
 
 
 class DiffReport(BaseModel):
@@ -50,12 +60,12 @@ class DiffReport(BaseModel):
 
     @property
     def added(self) -> list[str]:
-        return [f"{c.provider_id}/{c.case_id}" for c in self.cases if c.change in ("added", "removed")]
+        return [c.label for c in self.cases if c.change in ("added", "removed")]
 
 
 def bootstrap_drift_ci(
-    base: dict[tuple[str, str], int],
-    curr: dict[tuple[str, str], int],
+    base: dict[tuple[str, str, str], int],
+    curr: dict[tuple[str, str, str], int],
     n_iter: int = 2000,
     ci: float = 0.95,
     seed: int = 42,
@@ -91,7 +101,7 @@ def diff_runs(baseline: RunResult, current: RunResult, n_iter: int = 2000) -> Di
             change = "newly_passed"
         else:
             change = "newly_failed"
-        cases.append(CaseDiff(provider_id=k[0], case_id=k[1], change=change))
+        cases.append(CaseDiff(provider_id=k[0], prompt_id=k[1], case_id=k[2], change=change))
     low, high, sig = bootstrap_drift_ci(base, curr, n_iter=n_iter)
     return DiffReport(
         baseline_hash=baseline.config_hash,
@@ -134,6 +144,7 @@ def gate_decision(
                     f"{' - statistically significant' if report.significant else ''})"
                 )
             if report.newly_failed:
-                reasons.append("newly failed cases: "
-                               + ", ".join(f"{c.provider_id}/{c.case_id}" for c in report.newly_failed))
+                reasons.append(
+                    "newly failed cases: " + ", ".join(c.label for c in report.newly_failed)
+                )
     return GateDecision(passed=not reasons, reasons=reasons, diff=report)

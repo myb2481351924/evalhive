@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from sqlalchemy import JSON, DateTime, Float, Integer, String, Text, create_engine, select
@@ -51,7 +51,7 @@ class Store:
 
     def create_pending(self, label: str) -> int:
         with Session(self.engine) as s:
-            row = RunRow(label=label, created_at=datetime.now(timezone.utc), status="running")
+            row = RunRow(label=label, created_at=datetime.now(UTC), status="running")
             s.add(row)
             s.commit()
             return row.id

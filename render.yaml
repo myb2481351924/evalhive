@@ -1,0 +1,11 @@
+# Render Blueprint: one-click deploy of the offline (mock-provider) demo.
+# 1. Push this repo to GitHub. 2. Render -> New -> Blueprint -> pick the repo.
+# 3. After deploy, put the public URL into the Live Demo badge in README.md.
+services:
+  - type: web
+    name: evalhive-demo
+    runtime: docker
+    dockerfilePath: ./docker/Dockerfile
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true

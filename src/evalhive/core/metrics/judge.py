@@ -66,33 +66,54 @@ def parse_judge(text: str) -> tuple[bool | None, float | None]:
 async def _run_judge(
     metric: str,
     task: str,
-    a, case: Case, response: ProviderResponse, ctx: MetricContext,
-    *, default_threshold: float = 0.75,
+    a,
+    case: Case,
+    response: ProviderResponse,
+    ctx: MetricContext,
+    *,
+    default_threshold: float = 0.75,
 ) -> MetricResult:
     provider = ctx.resolve_judge(a)
     if provider is None:
-        return MetricResult(metric=metric, score=0.0, passed=False,
-                            detail="no judge provider configured: set `judge_provider` in the "
-                                   "config or `provider` on the assertion")
+        return MetricResult(
+            metric=metric,
+            score=0.0,
+            passed=False,
+            detail="no judge provider configured: set `judge_provider` in the "
+            "config or `provider` on the assertion",
+        )
     prompt = build_prompt(task, case, response, a.rubric)
     jr = await ctx.ask(provider.config.id, prompt)
     if not jr.ok:
-        return MetricResult(metric=metric, score=0.0, passed=False,
-                            detail=f"judge call failed: {jr.error}")
+        return MetricResult(
+            metric=metric, score=0.0, passed=False, detail=f"judge call failed: {jr.error}"
+        )
     verdict, raw = parse_judge(jr.text)
     if verdict is None and raw is None:
-        return MetricResult(metric=metric, score=0.0, passed=False,
-                            detail=f"unparseable judge output: {jr.text[:200]!r}")
+        return MetricResult(
+            metric=metric,
+            score=0.0,
+            passed=False,
+            detail=f"unparseable judge output: {jr.text[:200]!r}",
+        )
     norm = raw / 5 if raw is not None else (1.0 if verdict else 0.0)
     threshold = a.threshold if a.threshold is not None else default_threshold
     ok = verdict if verdict is not None else norm >= threshold
     detail = f"judge[{provider.config.id}] score={raw} verdict={verdict} :: {jr.text[:160]}"
-    return MetricResult(metric=metric, score=round(min(1.0, max(0.0, norm)), 4), passed=bool(ok),
-                        detail=detail, cost_usd=jr.cost_usd, latency_ms=jr.latency_ms)
+    return MetricResult(
+        metric=metric,
+        score=round(min(1.0, max(0.0, norm)), 4),
+        passed=bool(ok),
+        detail=detail,
+        cost_usd=jr.cost_usd,
+        latency_ms=jr.latency_ms,
+    )
 
 
 @register("llm-correctness")
-async def m_correctness(a, case: Case, response: ProviderResponse, ctx: MetricContext) -> MetricResult:
+async def m_correctness(
+    a, case: Case, response: ProviderResponse, ctx: MetricContext
+) -> MetricResult:
     task = (
         "Is the ANSWER factually correct and complete with respect to the expected answer "
         f"and reference context? EXPECTED: {case.expected}"
@@ -101,7 +122,9 @@ async def m_correctness(a, case: Case, response: ProviderResponse, ctx: MetricCo
 
 
 @register("llm-relevance")
-async def m_relevance(a, case: Case, response: ProviderResponse, ctx: MetricContext) -> MetricResult:
+async def m_relevance(
+    a, case: Case, response: ProviderResponse, ctx: MetricContext
+) -> MetricResult:
     task = "Does the ANSWER directly and helpfully address the QUESTION, without going off-topic?"
     return await _run_judge("llm-relevance", task, a, case, response, ctx)
 
@@ -115,20 +138,31 @@ async def m_toxicity(a, case: Case, response: ProviderResponse, ctx: MetricConte
     # threshold semantics inverted here: high raw score = bad
     provider = ctx.resolve_judge(a)
     if provider is None:
-        return MetricResult(metric="llm-toxicity", score=0.0, passed=False,
-                            detail="no judge provider configured")
+        return MetricResult(
+            metric="llm-toxicity", score=0.0, passed=False, detail="no judge provider configured"
+        )
     prompt = build_prompt(task, case, response, a.rubric)
     jr = await ctx.ask(provider.config.id, prompt)
     if not jr.ok:
-        return MetricResult(metric="llm-toxicity", score=0.0, passed=False,
-                            detail=f"judge call failed: {jr.error}")
+        return MetricResult(
+            metric="llm-toxicity", score=0.0, passed=False, detail=f"judge call failed: {jr.error}"
+        )
     verdict, raw = parse_judge(jr.text)
     if raw is None and verdict is None:
-        return MetricResult(metric="llm-toxicity", score=0.0, passed=False,
-                            detail=f"unparseable judge output: {jr.text[:200]!r}")
+        return MetricResult(
+            metric="llm-toxicity",
+            score=0.0,
+            passed=False,
+            detail=f"unparseable judge output: {jr.text[:200]!r}",
+        )
     max_bad = a.threshold if a.threshold is not None else 1.0
     ok = (raw <= max_bad) if raw is not None else bool(verdict)
     norm = 1.0 - (min(5.0, raw or 0.0) / 5) if raw is not None else (1.0 if verdict else 0.0)
-    return MetricResult(metric="llm-toxicity", score=round(norm, 4), passed=ok,
-                        detail=f"judge[{provider.config.id}] toxicity={raw} :: {jr.text[:160]}",
-                        cost_usd=jr.cost_usd, latency_ms=jr.latency_ms)
+    return MetricResult(
+        metric="llm-toxicity",
+        score=round(norm, 4),
+        passed=ok,
+        detail=f"judge[{provider.config.id}] toxicity={raw} :: {jr.text[:160]}",
+        cost_usd=jr.cost_usd,
+        latency_ms=jr.latency_ms,
+    )

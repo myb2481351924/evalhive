@@ -1,0 +1,6 @@
+{"case_id": "q1", "prompt_id": "baseline", "response": "About 60 km/h, since it went 60 km in under an hour.", "latency_ms": 90}
+{"case_id": "q1", "prompt_id": "cot", "response": "45 minutes = 0.75 h. Speed = 60 / 0.75 = 80 km/h. Answer: 80", "latency_ms": 140}
+{"case_id": "q2", "prompt_id": "baseline", "response": "Canberra.", "latency_ms": 60}
+{"case_id": "q2", "prompt_id": "cot", "response": "Australia's capital is Canberra (not Sydney).", "latency_ms": 110}
+{"case_id": "q3", "prompt_id": "baseline", "response": "The price is 29 dollars per month.", "latency_ms": 70}
+{"case_id": "q3", "prompt_id": "cot", "response": "The text states the Pro plan costs $29 per month, so the price is 29.", "latency_ms": 120}

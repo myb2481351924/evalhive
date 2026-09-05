@@ -36,19 +36,22 @@ class MockProvider(LLMProvider):
                 if line:
                     self._entries.append(json.loads(line))
         self._salt = hashlib.sha256(
-            raw + (config.default_response or "").encode()
-            + (config.prompt_template or "").encode()
+            raw + (config.default_response or "").encode() + (config.prompt_template or "").encode()
         ).hexdigest()[:12]
 
     def cache_salt(self) -> str:
         # editing the recorded fixtures must invalidate cached responses
         return f"mock:{self._salt}"
 
-    async def complete(self, prompt: str, *, case_id: str | None = None) -> ProviderResponse:
-        entry = self._lookup(case_id, prompt)
+    async def complete(
+        self, prompt: str, *, case_id: str | None = None, prompt_id: str | None = None
+    ) -> ProviderResponse:
+        entry = self._lookup(case_id, prompt, prompt_id)
         if entry is None:
             if self.config.default_response is None:
-                return ProviderResponse(error=f"no mock response for case {case_id or prompt[:40]!r}")
+                return ProviderResponse(
+                    error=f"no mock response for case {case_id or prompt[:40]!r}"
+                )
             entry = {"response": self.config.default_response}
         text = str(entry.get("response", ""))
         latency = float(entry.get("latency_ms", 10))
@@ -63,10 +66,17 @@ class MockProvider(LLMProvider):
             cost_usd=estimate_cost(self.config.model, pt, ct),
         )
 
-    def _lookup(self, case_id: str | None, prompt: str) -> dict | None:
+    def _lookup(
+        self, case_id: str | None, prompt: str, prompt_id: str | None = None
+    ) -> dict | None:
         if case_id:
+            # most specific: (case, prompt variant) pairs recorded for matrix demos
+            if prompt_id:
+                for e in self._entries:
+                    if e.get("case_id") == case_id and e.get("prompt_id") == prompt_id:
+                        return e
             for e in self._entries:
-                if e.get("case_id") == case_id:
+                if e.get("case_id") == case_id and not e.get("prompt_id"):
                     return e
         for e in self._entries:
             needle = e.get("match")

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from xml.sax.saxutils import escape
 
 from ..core.compare import GateDecision
@@ -12,14 +12,17 @@ from ..core.results import RunResult
 def to_junit_xml(result: RunResult) -> str:
     cases = []
     for e in result.results:
-        body = [f'  <testcase classname="evalhive.{escape(e.provider_id)}" '
-                f'name="{escape(e.case_id)}" time="{e.latency_ms / 1000:.3f}">']
+        body = [
+            f'  <testcase classname="evalhive.{escape(e.provider_id)}" '
+            f'name="{escape(e.case_id)}" time="{e.latency_ms / 1000:.3f}">'
+        ]
         if e.error:
             body.append(f'    <error message="{escape(e.error[:500])}" />')
         for m in e.metrics:
             if not m.passed:
-                body.append(f'    <failure message="{escape(m.metric)}: '
-                            f'{escape(m.detail[:500])}" />')
+                body.append(
+                    f'    <failure message="{escape(m.metric)}: {escape(m.detail[:500])}" />'
+                )
         body.append("  </testcase>")
         cases.append("\n".join(body))
     summary = f"EvalHive run {result.config_hash}"
@@ -69,5 +72,7 @@ def to_markdown(result: RunResult, decision: GateDecision | None = None) -> str:
                 bad = ", ".join(f"{m.metric}={m.score:.2f}" for m in e.metrics if not m.passed)
                 lines.append(f"- `{e.provider_id}/{e.case_id}` — {bad}")
         lines += ["", "</details>"]
-    lines.append(f"\n<sub>config_hash `{result.config_hash}` · {datetime.now(timezone.utc):%Y-%m-%d %H:%M UTC}</sub>")
+    lines.append(
+        f"\n<sub>config_hash `{result.config_hash}` · {datetime.now(UTC):%Y-%m-%d %H:%M UTC}</sub>"
+    )
     return "\n".join(lines)

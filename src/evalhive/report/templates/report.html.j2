@@ -104,7 +104,7 @@
       <tr><th>provider / case</th><th>result</th><th>metrics</th><th class="num">latency</th><th class="num">cost</th></tr>
       {% for e in result.results %}
       <tr>
-        <td><code>{{ e.provider_id }}/{{ e.case_id }}</code></td>
+        <td><code>{{ e.provider_id }}{% if e.prompt_id != 'default' %}/{{ e.prompt_id }}{% endif %}/{{ e.case_id }}</code></td>
         <td>{% if e.error %}<span class="badge bad">ERROR</span>
             {% elif e.passed %}<span class="badge ok">PASS</span>
             {% else %}<span class="badge bad">FAIL</span>{% endif %}</td>

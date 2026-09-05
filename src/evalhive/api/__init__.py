@@ -52,8 +52,9 @@ def create_app(store: Store | None = None) -> FastAPI:
             raise HTTPException(404, "run not found")
         result = store.get_run(run_id)
         if result is None:
-            raise HTTPException(409, f"run is {row.status}"
-                                + (f": {row.error}" if row.error else ""))
+            raise HTTPException(
+                409, f"run is {row.status}" + (f": {row.error}" if row.error else "")
+            )
         return {
             "id": row.id,
             "label": row.label,
@@ -78,7 +79,7 @@ def create_app(store: Store | None = None) -> FastAPI:
             cfg, config_dir = load_config(body.config_path)
             cases = load_cases(cfg, config_dir)
         except ConfigError as e:
-            raise HTTPException(422, str(e))
+            raise HTTPException(422, str(e)) from e
         row_id = store.create_pending(label=f"api:{body.config_path}")
 
         async def _job() -> None:
@@ -100,8 +101,12 @@ def create_app(store: Store | None = None) -> FastAPI:
         row = store.get_baseline_row()
         if not row:
             raise HTTPException(404, "no baseline set")
-        return {"id": row.id, "label": row.label, "config_hash": row.config_hash,
-                "pass_rate": row.pass_rate}
+        return {
+            "id": row.id,
+            "label": row.label,
+            "config_hash": row.config_hash,
+            "pass_rate": row.pass_rate,
+        }
 
     @app.post("/api/baseline")
     def set_baseline(body: dict) -> dict:
@@ -127,9 +132,16 @@ def create_app(store: Store | None = None) -> FastAPI:
             summaries = result.summary() if result else {}
             cost = sum(s.total_cost_usd for s in summaries.values())
             lat = max((s.avg_latency_ms for s in summaries.values()), default=0.0)
-            out.append({"id": r.id, "created_at": r.created_at.isoformat(),
-                        "pass_rate": r.pass_rate, "cost_usd": round(cost, 4),
-                        "avg_latency_ms": lat, "is_baseline": bool(r.is_baseline)})
+            out.append(
+                {
+                    "id": r.id,
+                    "created_at": r.created_at.isoformat(),
+                    "pass_rate": r.pass_rate,
+                    "cost_usd": round(cost, 4),
+                    "avg_latency_ms": lat,
+                    "is_baseline": bool(r.is_baseline),
+                }
+            )
         return out
 
     @app.get("/api/health")

@@ -4,6 +4,8 @@
 
 [![MIT license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![CI](https://github.com/myb2481351924/evalhive/actions/workflows/ci.yml/badge.svg)](https://github.com/myb2481351924/evalhive/actions/workflows/ci.yml)
+[![ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![mypy](https://img.shields.io/badge/mypy-checked-2A6DB2)](https://mypy-lang.org/)
 ![python](https://img.shields.io/badge/python-3.11%2B-green)
 
 LLM apps ship fast and regress silently: a prompt tweak, a model version bump, a
@@ -12,11 +14,17 @@ engineer's discipline to model quality: declarative eval suites, layered metrics
 run-to-run regression detection with statistical significance, and a hard CI gate
 that fails the build when quality drops.
 
-> 中文文档见 [README.zh-CN.md](README.zh-CN.md)；**保姆级使用教程（中文）：[docs/TUTORIAL.zh-CN.md](docs/TUTORIAL.zh-CN.md)**。
+> 中文文档见 [README.zh-CN.md](README.zh-CN.md)；**保姆级使用教程（中文）：[docs/TUTORIAL.zh-CN.md](docs/TUTORIAL.zh-CN.md)**；**设计笔记（中文博客草稿）：[docs/blog-zh.md](docs/blog-zh.md)**。
+
+<!-- LIVE DEMO: deploy free on Render (render.yaml is committed): Render -> New -> Blueprint
+     -> pick this repo. Then replace LIVE_DEMO_URL below with your instance URL. -->
+[![Live Demo](https://img.shields.io/badge/live%20demo-render-46E3B7)](LIVE_DEMO_URL)
 
 ## Features
 
-- **Declarative evals** — one YAML: `providers × datasets × asserts`, versioned with your code
+- **Declarative evals** — one YAML: `providers × prompts × datasets × asserts`, versioned with your code
+- **Prompt A/B matrix** — declare `prompts:` variants and every provider × variant × case is
+  evaluated, diffed and gated separately (`mock-model/baseline` vs `mock-model/cot` in one run)
 - **Layered metrics** — free deterministic assertions (regex, JSON schema, latency, cost,
   similarity) → LLM-as-judge (correctness, relevance, toxicity) → simplified RAGAS-style
   `faithfulness` / `answer-relevance`
@@ -42,6 +50,9 @@ pip install -e .
 
 # 1) run an offline demo eval (mock providers, no keys needed)
 evalhive run examples/rag-chat/config.yaml --gate -v --html out/report.html
+
+# 1b) prompt A/B matrix — same model, baseline vs step-by-step prompt
+evalhive run examples/prompt-matrix/config.yaml --gate -v
 
 # 2) compare against a previous run — drift with bootstrap CI
 evalhive run examples/rag-chat/config.yaml --save
@@ -133,7 +144,9 @@ into your repo: run suite → fail the check on breach → comment a Markdown su
 
 ```bash
 pip install -e ".[dev]"
-pytest -q        # 33 tests: metrics, loader, bootstrap, e2e runner, cache salt, storage, API
+pytest -q         # 42 tests: metrics, loader, bootstrap, e2e runner, matrix, cache salt, storage, API
+ruff check src tests && ruff format --check src tests
+mypy              # pydantic plugin enabled; strict enough to catch real drift
 ```
 
 CI (`.github/workflows/ci.yml`) runs the suite and then eats its own dog food:

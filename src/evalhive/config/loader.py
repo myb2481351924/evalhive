@@ -11,6 +11,7 @@ from pydantic import ValidationError
 
 from .models import Case, EvalConfig
 
+
 class ConfigError(Exception):
     pass
 
@@ -37,7 +38,15 @@ def load_config(path: str | Path) -> tuple[EvalConfig, Path]:
         raise ConfigError(f"{p}: duplicate provider ids")
     judge_ids = {pr.id for pr in cfg.judge_providers}
     if cfg.judge_provider and cfg.judge_provider not in judge_ids:
-        raise ConfigError(f"{p}: judge_provider {cfg.judge_provider!r} not declared in judge_providers")
+        raise ConfigError(
+            f"{p}: judge_provider {cfg.judge_provider!r} not declared in judge_providers"
+        )
+    variant_ids = [v.id for v in cfg.prompts]
+    if len(variant_ids) != len(set(variant_ids)):
+        raise ConfigError(f"{p}: duplicate prompt variant ids")
+    for v in cfg.prompts:
+        if "{prompt}" not in v.template:
+            raise ConfigError(f"{p}: prompt variant {v.id!r} template must contain {{prompt}}")
     return cfg, p.parent
 
 
@@ -75,13 +84,16 @@ def _validate_judge_refs(cfg: EvalConfig, cases: list[Case], where: str) -> None
     judge_ids = {pr.id for pr in cfg.judge_providers}
     for a in cfg.defaults.assert_:
         if a.provider and a.provider not in judge_ids:
-            raise ConfigError(f"{where}: default assertion provider {a.provider!r} "
-                              "is not a judge_providers id")
+            raise ConfigError(
+                f"{where}: default assertion provider {a.provider!r} is not a judge_providers id"
+            )
     for c in cases:
         for a in c.assert_:
             if a.provider and a.provider not in judge_ids:
-                raise ConfigError(f"{where}: case {c.id!r} assertion provider {a.provider!r} "
-                                  "is not a judge_providers id")
+                raise ConfigError(
+                    f"{where}: case {c.id!r} assertion provider {a.provider!r} "
+                    "is not a judge_providers id"
+                )
 
 
 def config_hash(cfg: EvalConfig, cases: list[Case], config_dir: Path | None = None) -> str:

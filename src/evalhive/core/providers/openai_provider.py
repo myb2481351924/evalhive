@@ -23,7 +23,9 @@ class OpenAIProvider(LLMProvider):
             self._client = httpx.AsyncClient(timeout=self.config.timeout_s)
         return self._client
 
-    async def complete(self, prompt: str, *, case_id: str | None = None) -> ProviderResponse:
+    async def complete(
+        self, prompt: str, *, case_id: str | None = None, prompt_id: str | None = None
+    ) -> ProviderResponse:
         cfg = self.config
         api_key = os.environ.get(cfg.api_key_env, "")
         if not api_key:

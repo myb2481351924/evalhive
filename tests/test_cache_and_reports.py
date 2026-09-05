@@ -14,8 +14,9 @@ EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 
 
 async def _mock_provider(tmp_path: Path, response_text: str = "one"):
-    (tmp_path / "r.jsonl").write_text(f'{{"case_id":"a","response":"{response_text}"}}\n',
-                                      encoding="utf-8")
+    (tmp_path / "r.jsonl").write_text(
+        f'{{"case_id":"a","response":"{response_text}"}}\n', encoding="utf-8"
+    )
     cfg_file = tmp_path / "c.yaml"
     cfg_file.write_text(
         "providers:\n  - id: m\n    type: mock\n    responses_file: r.jsonl\n"

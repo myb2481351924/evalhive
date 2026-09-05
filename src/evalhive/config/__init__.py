@@ -2,10 +2,11 @@ from .loader import ConfigError, config_hash, load_cases, load_config
 from .models import (
     AssertionConfig,
     Case,
-    DefaultsConfig,
     DatasetConfig,
+    DefaultsConfig,
     EvalConfig,
     GateConfig,
+    PromptVariant,
     ProviderConfig,
 )
 
@@ -17,6 +18,7 @@ __all__ = [
     "DatasetConfig",
     "EvalConfig",
     "GateConfig",
+    "PromptVariant",
     "ProviderConfig",
     "config_hash",
     "load_cases",

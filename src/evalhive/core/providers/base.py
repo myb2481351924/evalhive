@@ -34,10 +34,13 @@ class LLMProvider(ABC):
     def __init__(self, config: ProviderConfig):
         self.config = config
 
-    def render_prompt(self, case: Case) -> str:
+    def render_prompt(self, case: Case, template: str | None = None) -> str:
+        """Render a prompt from the given template (prompt-matrix variant) or the
+        provider's own config template; default prepends context."""
+        tpl = template or self.config.prompt_template
         ctx = "\n\n".join(case.context)
-        if self.config.prompt_template:
-            return self.config.prompt_template.format(prompt=case.prompt, context=ctx, **case.vars)
+        if tpl:
+            return tpl.format(prompt=case.prompt, context=ctx, **case.vars)
         if ctx:
             return f"Context:\n{ctx}\n\nQuestion: {case.prompt}"
         return case.prompt
@@ -47,12 +50,13 @@ class LLMProvider(ABC):
         keys so changing model params or mock fixtures invalidates old entries."""
         return f"{self.config.model}:{self.config.temperature}"
 
-    async def aclose(self) -> None:
+    async def aclose(self) -> None:  # noqa: B027 - optional hook, not required by subclasses
         """Release any pooled connections; default is a no-op."""
 
     @abstractmethod
-    async def complete(self, prompt: str, *, case_id: str | None = None) -> ProviderResponse:
-        ...
+    async def complete(
+        self, prompt: str, *, case_id: str | None = None, prompt_id: str | None = None
+    ) -> ProviderResponse: ...
 
 
 def estimate_cost(model: str | None, prompt_tokens: int, completion_tokens: int) -> float:

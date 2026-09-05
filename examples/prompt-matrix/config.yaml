@@ -1,0 +1,23 @@
+description: Prompt variant matrix — same mock model, baseline vs step-by-step prompt
+providers:
+  - id: mock-model
+    type: mock
+    model: mock://llm
+    responses_file: responses.jsonl
+
+prompts:
+  - id: baseline
+    template: "Answer the question directly: {prompt}"
+  - id: cot
+    template: "Think step by step, then answer the question: {prompt}"
+
+datasets:
+  - path: dataset.jsonl
+
+defaults:
+  assert:
+    - type: latency
+      threshold: 500
+
+gate:
+  min_pass_rate: 0.8   # overall line; per-variant effect is visible in the summary table

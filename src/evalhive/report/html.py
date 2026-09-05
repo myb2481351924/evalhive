@@ -21,8 +21,7 @@ def to_html(result: RunResult, decision: GateDecision | None = None) -> str:
         for m in e.metrics:
             buckets.setdefault(e.provider_id, {}).setdefault(m.metric, []).append(m.score)
     avgs = {
-        pid: {mn: sum(v) / len(v) for mn, v in metrics.items()}
-        for pid, metrics in buckets.items()
+        pid: {mn: sum(v) / len(v) for mn, v in metrics.items()} for pid, metrics in buckets.items()
     }
     tpl = _env.get_template("report.html.j2")
     return tpl.render(

@@ -7,7 +7,7 @@ register into LLM_METRICS from judge.py / rag.py.
 from __future__ import annotations
 
 import asyncio
-import hashlib
+from collections.abc import Awaitable, Callable
 
 from ...config.models import AssertionConfig, Case
 from ..cache import ResponseCache
@@ -15,11 +15,15 @@ from ..providers.base import LLMProvider, ProviderResponse
 from ..results import MetricResult
 from .deterministic import DETERMINISTIC_METRICS
 
-LLM_METRICS: dict = {}
+JudgeFn = Callable[
+    [AssertionConfig, Case, ProviderResponse, "MetricContext"], Awaitable[MetricResult]
+]
+
+LLM_METRICS: dict[str, JudgeFn] = {}
 
 
 def register(name: str):
-    def deco(fn):
+    def deco(fn: JudgeFn) -> JudgeFn:
         LLM_METRICS[name] = fn
         return fn
 
@@ -80,15 +84,19 @@ async def evaluate(
     response: ProviderResponse,
     ctx: MetricContext,
 ) -> MetricResult:
-    fn = DETERMINISTIC_METRICS.get(assertion.type) or LLM_METRICS.get(assertion.type)
-    if fn is None:
-        return _failed(assertion.type, f"unknown metric {assertion.type!r}")
-    try:
-        if assertion.type in DETERMINISTIC_METRICS:
-            return fn(assertion, case, response)
-        return await fn(assertion, case, response, ctx)
-    except Exception as e:  # noqa: BLE001 - a broken metric must not kill the run
-        return _failed(assertion.type, f"metric error: {type(e).__name__}: {e}")
+    det = DETERMINISTIC_METRICS.get(assertion.type)
+    if det is not None:
+        try:
+            return det(assertion, case, response)
+        except Exception as e:  # noqa: BLE001 - a broken metric must not kill the run
+            return _failed(assertion.type, f"metric error: {type(e).__name__}: {e}")
+    judge = LLM_METRICS.get(assertion.type)
+    if judge is not None:
+        try:
+            return await judge(assertion, case, response, ctx)
+        except Exception as e:  # noqa: BLE001 - a broken metric must not kill the run
+            return _failed(assertion.type, f"metric error: {type(e).__name__}: {e}")
+    return _failed(assertion.type, f"unknown metric {assertion.type!r}")
 
 
 def import_llm_metrics() -> None:

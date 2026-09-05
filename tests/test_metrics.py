@@ -33,7 +33,7 @@ def test_regex():
 
 def test_json_valid_and_schema():
     assert run("json-valid", text='{"a": 1}').passed
-    assert run("json-valid", text="```json\n{\"a\": 1}\n```").passed  # fenced
+    assert run("json-valid", text='```json\n{"a": 1}\n```').passed  # fenced
     assert not run("json-valid", text="not json").passed
 
     schema = {"type": "object", "required": ["a"]}
@@ -50,13 +50,11 @@ def test_latency_and_cost_thresholds():
 
 
 def test_similarity():
-    m = run("similarity", "def fib(n): return n", threshold=0.5,
-            text="def fib(n): return n + 0")
+    m = run("similarity", "def fib(n): return n", threshold=0.5, text="def fib(n): return n + 0")
     assert m.passed and 0.5 < m.score < 1.0
 
 
 @pytest.mark.parametrize("name", sorted(DETERMINISTIC_METRICS))
 def test_scores_within_bounds(name):
-    m = run(name, value=0.001 if name == "cost" else (100 if name == "latency" else "x"),
-            text="x")
+    m = run(name, value=0.001 if name == "cost" else (100 if name == "latency" else "x"), text="x")
     assert 0.0 <= m.score <= 1.0

@@ -67,11 +67,14 @@ def test_duplicate_case_ids_rejected(tmp_path: Path):
 
 def test_unknown_judge_ref_rejected(tmp_path: Path):
     ds = tmp_path / "d.jsonl"
-    ds.write_text('{"id":"x","prompt":"a","assert":[{"type":"llm-correctness","provider":"ghost"}]}\n',
-                  encoding="utf-8")
+    ds.write_text(
+        '{"id":"x","prompt":"a","assert":[{"type":"llm-correctness","provider":"ghost"}]}\n',
+        encoding="utf-8",
+    )
     cfg_file = tmp_path / "c.yaml"
     cfg_file.write_text(
-        "providers:\n  - id: p\n    type: mock\n    default_response: ok\ndatasets:\n  - path: d.jsonl\n",
+        "providers:\n  - id: p\n    type: mock\n    default_response: ok\n"
+        "datasets:\n  - path: d.jsonl\n",
         encoding="utf-8",
     )
     cfg, base = load_config(cfg_file)

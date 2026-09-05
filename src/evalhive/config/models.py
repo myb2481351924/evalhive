@@ -44,6 +44,15 @@ class ProviderConfig(BaseModel):
     default_response: str | None = None
 
 
+class PromptVariant(BaseModel):
+    """One prompt variant; the matrix becomes providers x prompts x cases when set."""
+
+    id: str
+    template: str = Field(
+        description="Prompt template with a {prompt} placeholder (plus {context} and case vars)"
+    )
+
+
 class DatasetConfig(BaseModel):
     path: str = Field(description="JSONL file, relative to the config file")
     vars: dict[str, Any] = Field(default_factory=dict)
@@ -70,6 +79,11 @@ class EvalConfig(BaseModel):
     judge_providers: list[ProviderConfig] = Field(
         default_factory=list,
         description="LLM-judge services; available to judge metrics but NOT evaluated as targets",
+    )
+    prompts: list[PromptVariant] = Field(
+        default_factory=list,
+        description="Prompt variants: every target provider x variant x case is evaluated. "
+        "Omit to use each provider's own prompt_template.",
     )
     datasets: list[DatasetConfig] = Field(default_factory=list)
     defaults: DefaultsConfig = Field(default_factory=DefaultsConfig)

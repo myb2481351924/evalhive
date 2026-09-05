@@ -4,6 +4,10 @@
 
 > 📖 **保姆级使用教程：[docs/TUTORIAL.zh-CN.md](docs/TUTORIAL.zh-CN.md)** —— 安装、跑通第一个评测、接真实模型、基线回归、CI 集成、API、FAQ。
 
+<!-- 在线演示：render.yaml 已就绪，Render -> New -> Blueprint 选本仓库即可免费部署；
+     部署后把下方 LIVE_DEMO_URL 换成实例地址。 -->
+[![在线 Demo](https://img.shields.io/badge/在线%20Demo-Render-46E3B7)](LIVE_DEMO_URL)
+
 一句话定位：LLM 应用的 prompt 一改、模型一升级、检索一换，单元测试完全无感——EvalHive
 用声明式评测配置、分层指标体系、基于 **配对 bootstrap 置信区间** 的回归判定，把「质量退化」
 变成 CI 里可以硬性拦截的红灯。
@@ -12,7 +16,8 @@
 
 | 能力 | 说明 |
 |---|---|
-| 声明式评测 | 一个 YAML：`providers × datasets × assert`，随代码进版本库 |
+| 声明式评测 | 一个 YAML：`providers × prompts × datasets × assert`，随代码进版本库 |
+| Prompt A/B 矩阵 | 声明 `prompts:` 变体后自动评测 provider × 变体 × 用例，逐变体打分/对比/门禁（如 `mock-model/baseline` vs `mock-model/cot`） |
 | 三层指标 | ① 确定性断言（equals/regex/json-schema/latency/cost/similarity，零成本）② LLM-as-Judge（正确性/相关性/毒性，原始判词可审计）③ RAG 指标（faithfulness/answer-relevance，简化版 RAGAS） |
 | 回归对比 | 与基线 run 逐用例 diff；漂移给出 95% bootstrap CI，自动区分「显著退化」与「小样本噪声」 |
 | CI 门禁 | `--gate` 不达标退出码 1；输出 JUnit XML、PR 评论 Markdown、自包含 HTML 报告 |
@@ -60,7 +65,7 @@ evalhive serve                 # 看板 http://127.0.0.1:8000
 ## 技术栈
 
 Python 3.11+ · FastAPI · SQLAlchemy 2 + SQLite · Pydantic v2 · Typer · Jinja2 · httpx ·
-ECharts · pytest · GitHub Actions · Docker
+ECharts · pytest + ruff + mypy（全部进 CI） · GitHub Actions · Docker
 
 ## Roadmap
 

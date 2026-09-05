@@ -11,4 +11,5 @@ COPY web ./web
 
 EXPOSE 8000
 VOLUME ["/app/.evalhive"]
-CMD ["evalhive", "serve", "--host", "0.0.0.0", "--port", "8000"]
+# Render/Railway inject $PORT; local runs default to 8000
+CMD ["sh", "-c", "evalhive serve --host 0.0.0.0 --port ${PORT:-8000}"]

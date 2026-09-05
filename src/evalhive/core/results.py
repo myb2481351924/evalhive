@@ -16,6 +16,7 @@ class MetricResult(BaseModel):
 
 class CaseEval(BaseModel):
     provider_id: str
+    prompt_id: str = "default"  # which prompt variant produced this answer
     case_id: str
     prompt: str = ""  # empty when prompt rendering itself failed
     response: str = ""
@@ -26,17 +27,17 @@ class CaseEval(BaseModel):
     metrics: list[MetricResult] = Field(default_factory=list)
     error: str | None = None
 
-    @computed_field  # serialized into JSON so API/dashboard can read `passed`
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def passed(self) -> bool:
         return self.error is None and all(m.passed for m in self.metrics)
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def judge_cost_usd(self) -> float:
         return round(sum(m.cost_usd for m in self.metrics), 6)
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def total_cost_usd(self) -> float:
         return round(self.cost_usd + self.judge_cost_usd, 6)
@@ -61,9 +62,12 @@ class RunResult(BaseModel):
     results: list[CaseEval] = Field(default_factory=list)
 
     def by_provider(self) -> dict[str, list[CaseEval]]:
+        """Group by provider, splitting into one bucket per prompt variant
+        ("provider" when no variants are used, "provider/variant" otherwise)."""
         out: dict[str, list[CaseEval]] = {}
         for r in self.results:
-            out.setdefault(r.provider_id, []).append(r)
+            key = r.provider_id if r.prompt_id == "default" else f"{r.provider_id}/{r.prompt_id}"
+            out.setdefault(key, []).append(r)
         return out
 
     def summary(self) -> dict[str, ProviderSummary]:

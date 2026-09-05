@@ -18,6 +18,12 @@ jobs:
           python-version: "3.12"
       - name: Install
         run: pip install -e ".[dev]"
+      - name: Lint (ruff check + format)
+        run: |
+          ruff check src tests
+          ruff format --check src tests
+      - name: Type check (mypy)
+        run: mypy
       - name: Unit & integration tests
         run: pytest -q
       - name: Offline eval run (mock providers, zero API keys)

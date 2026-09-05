@@ -26,7 +26,9 @@ def test_health(client):
 
 
 def test_trigger_and_poll_run(client):
-    r = client.post("/api/runs", json={"config_path": str(REPO_ROOT / "examples/rag-chat/config.yaml")})
+    r = client.post(
+        "/api/runs", json={"config_path": str(REPO_ROOT / "examples/rag-chat/config.yaml")}
+    )
     assert r.status_code == 200
     run_id = r.json()["run_id"]
     for _ in range(50):
@@ -47,7 +49,9 @@ def test_trigger_and_poll_run(client):
 
 
 def test_baseline_flow(client):
-    r = client.post("/api/runs", json={"config_path": str(REPO_ROOT / "examples/rag-chat/config.yaml")})
+    r = client.post(
+        "/api/runs", json={"config_path": str(REPO_ROOT / "examples/rag-chat/config.yaml")}
+    )
     run_id = r.json()["run_id"]
     for _ in range(50):
         time.sleep(0.1)
